@@ -1,0 +1,18 @@
+# IDE settings
+.vscode/
+
+# Maven build output
+target/
+
+# Maven shade plugin output
+dependency-reduced-pom.xml
+
+# OS-specific files
+.DS_Store
+
+# Logs
+*.log
+
+# AWS credentials (if any)
+*.pem
+.env
