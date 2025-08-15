@@ -47,20 +47,20 @@ src/main/java/com/aws/springboot/
 ```bash
 export AWS_ACCESS_KEY_ID=your-access-key
 export AWS_SECRET_ACCESS_KEY=your-secret-key
-
-
-Architecture Flow
-[Client Request]
-      |
-      v
-[Spring Boot Controller] --> Receives request parameters & file
-      |
-      v
-[Service Layer] --> Calls AWS S3 SDK with credentials & file data
-      |
-      v
-[AWS S3] --> Stores the file in the specified bucket
-      |
-      v
-[Response Sent Back to Client with ETag]
 ```
+
+### Architecture Flow
+
+[Client Request]
+|
+v
+[Spring Boot Controller] --> Receives request parameters & file
+|
+v
+[Service Layer] --> Calls AWS S3 SDK with credentials & file data
+|
+v
+[AWS S3] --> Stores the file in the specified bucket
+|
+v
+[Response Sent Back to Client with ETag]
