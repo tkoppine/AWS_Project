@@ -1,66 +1,96 @@
-# AWS S3 File Upload – Spring Boot Project
+# Spring Boot AWS S3 File Upload
 
-## 📌 Overview
+A simple Spring Boot application to upload files to an Amazon S3 bucket using the AWS SDK for Java (v2).
 
-This project demonstrates how to upload files to an **AWS S3 bucket** using **Spring Boot** and the **AWS SDK v2**.  
-It provides a REST API endpoint where users can send a file, specify the bucket and key, and store the file in S3.
+---
 
-## 🚀 Features
+## How It Works
 
-- Upload any file to an AWS S3 bucket.
-- Accepts bucket name, file key, and file through a REST API.
-- Configurable AWS credentials and region.
-- Supports large file uploads (up to 50MB in this setup).
+1. **Send a POST request** to `/upload` with:
+   - Query parameters:
+     - `bucket` → S3 bucket name
+     - `key` → Object key (path + filename in bucket)
+   - File parameter: `file` (multipart file)
+2. The backend uses the AWS SDK `S3Client` to stream the file directly to S3.
+3. S3 stores the file and returns an **ETag** as confirmation.
 
-## 📂 Project Structure
+---
 
-src/main/java/com/aws/springboot/
-│
-├── config/
-│ └── StorageConfig.java # AWS S3 client configuration
-│
-├── controller/
-│ └── S3Controller.java # REST endpoint for file upload
-│
-├── service/
-│ └── S3Service.java # Upload logic using AWS SDK
+## Upload Flow Diagram
 
-## ⚙️ Technologies Used
+```mermaid
+sequenceDiagram
+    participant Client
+    participant SpringBootApp
+    participant S3
 
-- **Java 17+**
-- **Spring Boot**
-- **AWS SDK for Java v2**
-- **Lombok**
-- **Maven**
-
-## 🔑 AWS Setup
-
-1. Create an **AWS account**.
-2. Create an **S3 bucket**.
-3. Create an **IAM user** with `AmazonS3FullAccess` permissions.
-4. Obtain **AWS Access Key** and **Secret Key**.
-
-## ⚙️ Configuration
-
-### Environment Variables (Recommended)
-
-```bash
-export AWS_ACCESS_KEY_ID=your-access-key
-export AWS_SECRET_ACCESS_KEY=your-secret-key
+    Client->>SpringBootApp: POST /upload (bucket, key, file)
+    SpringBootApp->>S3: PutObjectRequest (stream file)
+    S3-->>SpringBootApp: ETag response
+    SpringBootApp-->>Client: Upload success + ETag
 ```
 
-### Architecture Flow
+---
 
-[Client Request]
-|
-v
-[Spring Boot Controller] --> Receives request parameters & file
-|
-v
-[Service Layer] --> Calls AWS S3 SDK with credentials & file data
-|
-v
-[AWS S3] --> Stores the file in the specified bucket
-|
-v
-[Response Sent Back to Client with ETag]
+## Project Structure
+
+- **`S3Controller`** – Handles `/upload` endpoint.
+- **`S3Service`** – Upload logic with AWS SDK.
+- **`StorageConfig`** – Configures `S3Client` with region and credentials.
+
+---
+
+## Requirements
+
+- Java 17+
+- AWS S3 bucket
+- IAM user/role with `s3:PutObject` permission
+- Environment variables set:
+  ```bash
+  export AWS_ACCESS_KEY_ID=your_access_key
+  export AWS_SECRET_ACCESS_KEY=your_secret_key
+  ```
+
+---
+
+## Run Locally
+
+1. Clone the repo and navigate into it:
+   ```bash
+   git clone <your-repo-url>
+   cd <your-repo-folder>
+   ```
+2. Set AWS credentials as environment variables:
+   ```bash
+   export AWS_ACCESS_KEY_ID=your_access_key
+   export AWS_SECRET_ACCESS_KEY=your_secret_key
+   ```
+3. Start the application:
+   ```bash
+   ./mvnw spring-boot:run
+   ```
+4. Send a request:
+   ```bash
+   curl -X POST "http://localhost:8080/upload?bucket=your-bucket&key=folder/file.txt"         -F "file=@/path/to/local/file.txt"
+   ```
+
+---
+
+## Example Response
+
+```
+Upload success. ETag: "d41d8cd8f0b204e9800998ecf8e"
+```
+
+---
+
+## Notes
+
+- Default region is **`us-east-2`** (change in `StorageConfig` if needed).
+- Use Spring Boot's `spring.servlet.multipart.max-file-size` in `application.properties` to change file size limits.
+- For production:
+  - Prefer IAM roles or `DefaultCredentialsProvider`.
+  - Validate and sanitize inputs.
+  - Enable server-side encryption.
+
+---
