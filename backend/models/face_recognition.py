@@ -1,4 +1,5 @@
 import sys
+import os
 import torch
 from PIL import Image
 from facenet_pytorch import MTCNN, InceptionResnetV1
@@ -27,5 +28,6 @@ def face_match(img_path, data_path):
 
 if __name__ == "__main__":
     test_image = sys.argv[1]
-    result = face_match(test_image, 'data.pt')
+    default_data_path = os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'data.pt')
+    result = face_match(test_image, default_data_path)
     print(result[0])

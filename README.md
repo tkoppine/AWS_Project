@@ -1,114 +1,190 @@
-# AWS Face Recognition Worker System
+# AWS Face Recognition System
 
-This project is a **scalable face recognition system** running on AWS.  
-It uses **EC2**, **S3**, **SQS**, and **Boto3** to automatically scale worker instances based on the size of an input queue, process images for face matching, and send results back to an output queue.
+A scalable face recognition system built on AWS infrastructure that automatically processes images using EC2 workers, S3 storage, and SQS queues.
 
----
+## 🏗️ Project Structure
 
-## 1. Overview
+```
+/
+├── backend/                     # Backend services and processing
+│   ├── api/                    # Spring Boot REST API for file uploads
+│   ├── models/                 # Face recognition models and utilities
+│   │   ├── face_recognition.py # Core face matching logic
+│   │   └── names.py           # Utility to display available names
+│   ├── services/               # Auto-scaling and management services
+│   │   └── auto_scale.py      # EC2 auto-scaling controller
+│   └── workers/                # Background processing workers
+│       └── face_worker.py     # Main face processing worker
+├── aws/                        # AWS infrastructure components
+│   └── lambda/                 # Lambda functions
+│       ├── pom.xml            # Maven configuration for Lambda
+│       └── src/               # Lambda source code
+├── data/                       # Training data and images
+│   ├── data.pt                # Pre-trained face embeddings
+│   └── face_images_100/       # Sample face images
+├── docs/                       # Documentation
+│   └── original_README.md     # Original project documentation
+└── scripts/                    # Utility and deployment scripts
+    ├── Send_Images.py         # Image upload utility
+    └── start_script.sh        # Worker startup script
+```
 
-The system works in four main steps:
+## 🚀 Features
 
-1. **Scaling Controller** — Monitors an SQS input queue and launches/terminates EC2 worker instances based on workload.
-2. **Worker (Face Processor)** — Downloads images from S3, runs face recognition, and uploads the results back to S3 and SQS.
-3. **Face Recognition Model** — Uses `facenet-pytorch` to match faces against stored embeddings.
-4. **Image Uploader** — Sends images to the input S3 bucket and notifies the system.
+- **Auto-scaling**: Automatically launches and terminates EC2 instances based on queue length
+- **Face Recognition**: Uses FaceNet for accurate face matching with pre-trained embeddings
+- **Event-driven**: S3 uploads trigger Lambda functions that queue processing tasks
+- **Scalable Architecture**: Decoupled components using SQS for reliable message processing
+- **REST API**: Spring Boot application for easy file uploads and integration
 
----
+## 🛠️ Technology Stack
 
-## 2. Components
+### Backend
 
-### A. Auto Scaling Controller
+- **Python 3.8+** - Core processing logic
+- **PyTorch** - Deep learning framework
+- **FaceNet-PyTorch** - Pre-trained face recognition models
+- **Java 17** - Spring Boot API
+- **Spring Boot 3.x** - REST API framework
 
-- Monitors:
-  - **Number of messages** in the SQS input queue.
-  - **Number of running EC2 worker instances**.
-- **Scaling logic**:
-  - If the queue is empty → terminate all workers.
-  - If there are more messages than running instances → launch more workers (up to a limit).
-  - If there are fewer messages than running instances → scale down workers.
-- Workers are EC2 instances with the role **FaceWorker** that start processing automatically on boot.
+### AWS Services
 
-**Key AWS Services Used:**
+- **EC2** - Auto-scaling worker instances
+- **S3** - Image storage (input/output buckets)
+- **SQS** - Message queues for task coordination
+- **Lambda** - Event-driven processing triggers
+- **IAM** - Security and access management
 
-- **SQS** — Input queue for images.
-- **EC2** — Worker instances.
-- **IAM Role** — Grants workers access to S3 and SQS.
+## 📋 Prerequisites
 
----
+### System Requirements
 
-### B. Face Worker (`face_worker.py`)
+- Python 3.8 or higher
+- Java 17 or higher
+- AWS CLI configured with appropriate credentials
+- Maven for Java builds
 
-- Waits for new messages from the SQS input queue.
-- For each message:
-  1. Downloads the image from the input S3 bucket.
-  2. Runs `face_match()` to identify the person.
-  3. Saves results as a `.json` file in the output S3 bucket.
-  4. Sends a message to the output SQS queue with match details.
-  5. Deletes the original message from the input queue.
-
----
-
-### C. Face Matching (`face_recognition.py`)
-
-- Loads a pre-trained **InceptionResnetV1** model from `facenet-pytorch`.
-- Detects a face using **MTCNN**.
-- Generates a face embedding and compares it with stored embeddings (`data.pt`).
-- Returns the **closest matching name** and the **distance score**.
-
----
-
-### D. Image Uploader (`uploader.py`)
-
-- Reads images from a local folder.
-- Uploads them to the input S3 bucket with a key prefix `input/`.
-- Sends metadata to a local API endpoint (`/upload`) to trigger processing.
-
----
-
-## 3. Environment Variables
-
-These must be set before running the scripts:
-
-| Variable            | Description                   |
-| ------------------- | ----------------------------- |
-| `INPUT_QUEUE_URL`   | URL of the SQS input queue.   |
-| `OUTPUT_QUEUE_URL`  | URL of the SQS output queue.  |
-| `INPUT_BUCKET`      | Name of the S3 input bucket.  |
-| `OUTPUT_BUCKET`     | Name of the S3 output bucket. |
-| `AMI_ID`            | AMI ID for worker instances.  |
-| `SECURITY_GROUP_ID` | Security group for workers.   |
-| `SUBNET_ID`         | Subnet ID for workers.        |
-
----
-
-## 4. How It Works — Step by Step
-
-1. **Upload Images**
-
-   - Run the uploader script to send images to S3 and add a message to the SQS input queue.
-
-2. **Controller Starts Workers**
-
-   - The controller script monitors the input queue length.
-   - Launches new EC2 FaceWorker instances when needed.
-
-3. **Workers Process Images**
-
-   - Each worker downloads the assigned image from S3.
-   - Runs face recognition using stored embeddings.
-   - Uploads the JSON result to the output S3 bucket.
-   - Sends a result message to the output SQS queue.
-
-4. **Controller Scales Down**
-   - When the queue is empty, all workers are terminated automatically.
-
----
-
-## 5. Requirements
-
-Install dependencies:
+### Python Dependencies
 
 ```bash
-pip install boto3 facenet-pytorch pillow torch requests
+pip install torch torchvision facenet-pytorch pillow boto3 requests
 ```
+
+### AWS Resources Required
+
+- Input S3 bucket for image uploads
+- Output S3 bucket for processing results
+- Input SQS queue for processing requests
+- Output SQS queue for results
+- IAM roles for EC2 workers and Lambda functions
+- Security groups and VPC configuration
+
+## 🔧 Environment Configuration
+
+Set the following environment variables:
+
+```bash
+# AWS Configuration - Replace with your actual AWS credentials
+export AWS_ACCESS_KEY_ID=YOUR_AWS_ACCESS_KEY_HERE
+export AWS_SECRET_ACCESS_KEY=YOUR_AWS_SECRET_ACCESS_KEY_HERE
+export AWS_DEFAULT_REGION=YOUR_AWS_REGION  # e.g., us-east-1, us-west-2, etc.
+
+# SQS Queue URLs - Replace with your actual queue URLs
+export INPUT_QUEUE_URL=https://sqs.YOUR_AWS_REGION.amazonaws.com/YOUR_AWS_ACCOUNT_ID/YOUR_INPUT_QUEUE_NAME
+export OUTPUT_QUEUE_URL=https://sqs.YOUR_AWS_REGION.amazonaws.com/YOUR_AWS_ACCOUNT_ID/YOUR_OUTPUT_QUEUE_NAME
+
+# S3 Bucket Names - Replace with your unique bucket names
+export INPUT_BUCKET=YOUR_UNIQUE_INPUT_BUCKET_NAME
+export OUTPUT_BUCKET=YOUR_UNIQUE_OUTPUT_BUCKET_NAME
+
+# EC2 Configuration (for auto-scaling) - Replace with your AWS resource IDs
+export AMI_ID=YOUR_AMI_ID                    # e.g., ami-0abcdef1234567890
+export SECURITY_GROUP_ID=YOUR_SECURITY_GROUP_ID  # e.g., sg-0123456789abcdef0
+export SUBNET_ID=YOUR_SUBNET_ID              # e.g., subnet-0123456789abcdef0
+```
+
+## 🚦 Quick Start
+
+### 1. Start the Spring Boot API
+
+```bash
+cd backend/api
+./mvnw spring-boot:run
+```
+
+The API will be available at `http://localhost:8080`
+
+### 2. Start the Auto-Scaler
+
+```bash
+cd backend/services
+python auto_scale.py
+```
+
+### 3. Upload Images for Processing
+
+```bash
+cd scripts
+python Send_Images.py
+```
+
+### 4. Monitor Workers
+
+The auto-scaler will automatically launch EC2 instances as needed to process the queue.
+
+## 📊 System Architecture
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Image Upload  │───▶│   S3 Bucket     │───▶│  Lambda Trigger │
+│   (REST API)    │    │   (Input)       │    │                 │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+                                                        │
+                                                        ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│  Auto Scaler    │◀───│  SQS Queue      │◀───│  Message Queue  │
+│  (EC2 Manager)  │    │  (Input)        │    │                 │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │
+         ▼
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│  EC2 Workers    │───▶│  Face Recognition│───▶│  S3 Bucket      │
+│  (Face Proc.)   │    │  Processing     │    │  (Output)       │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
+
+## 🔒 Security Considerations
+
+- Use IAM roles instead of hardcoded credentials
+- Enable S3 bucket encryption
+- Configure VPC security groups properly
+- Use private subnets for worker instances
+- Enable CloudTrail for audit logging
+
+## 📈 Monitoring and Scaling
+
+- **CloudWatch Metrics**: Monitor queue length, instance count, and processing times
+- **Auto Scaling**: Configurable min/max instance limits
+- **Error Handling**: Comprehensive error logging and dead letter queues
+- **Cost Optimization**: Automatic termination of idle instances
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🆘 Support
+
+For issues and questions:
+
+1. Check the [original documentation](docs/original_README.md)
+2. Review AWS service configurations
+3. Verify environment variables are set correctly
+4. Check CloudWatch logs for detailed error information

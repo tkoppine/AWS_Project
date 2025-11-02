@@ -2,7 +2,10 @@ import os
 import json 
 import boto3
 import tempfile
-from face_recognition import face_match
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'models'))
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from models.face_recognition import face_match
 
 
 INPUT_QUEUE_URL = os.getenv("INPUT_QUEUE_URL")
@@ -27,7 +30,8 @@ def process_message(message):
         s3.download_file(INPUT_BUCKET, s3_key, tmp.name)
 
         try:
-            name, distance = face_match(tmp.name, 'data.pt')
+            data_path = os.path.join(os.path.dirname(__file__), '..', '..', 'data', 'data.pt')
+            name, distance = face_match(tmp.name, data_path)
         except Exception as e:
             print(f"Error processing {s3_key}: {e}")
             name, distance = "error", -1

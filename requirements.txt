@@ -1,0 +1,21 @@
+# AWS Face Recognition System - Python Dependencies
+# Install with: pip install -r requirements.txt
+
+# Core AWS and ML dependencies (Required)
+boto3>=1.34.0
+torch>=2.0.0
+torchvision>=0.15.0
+facenet-pytorch>=2.5.3
+Pillow>=10.0.0
+requests>=2.31.0
+numpy>=1.24.0
+
+# Development and testing tools (Optional)
+pytest>=7.4.0
+black>=23.0.0
+flake8>=6.0.0
+
+# Future web framework dependencies (Optional - for API enhancements)
+flask>=2.3.0
+fastapi>=0.100.0
+uvicorn>=0.23.0

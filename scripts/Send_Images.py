@@ -1,9 +1,10 @@
 import os
 import requests
 
-upload_url = "http://localhost:8080/upload"
-bucket_name = "asuinputbucket"
-image_folder = "face_images_100"
+# Update these variables with your actual values
+upload_url = "http://localhost:8080/upload"  # Your Spring Boot API endpoint
+bucket_name = "YOUR_INPUT_BUCKET_NAME"       # Replace with your S3 input bucket name
+image_folder = "face_images_100"             # Path to your image folder
 
 for image_name in os.listdir(image_folder):
     if not image_name.lower().endswith((".jpg", ".jpeg", ".png")):
