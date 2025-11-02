@@ -1,6 +1,6 @@
-# AWS Face Recognition System
+# ScaleVision: AI-Powered Face Recognition on AWS
 
-A scalable face recognition system built on AWS infrastructure that automatically processes images using EC2 workers, S3 storage, and SQS queues.
+A scalable, event-driven face recognition system built on AWS infrastructure that automatically processes images using EC2 workers, S3 storage, and SQS queues.
 
 ## 🏗️ Project Structure
 
